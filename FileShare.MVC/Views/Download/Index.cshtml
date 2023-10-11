@@ -1,0 +1,66 @@
+﻿@model List<FileShare.Entities.File>
+
+@{
+    ViewData["Title"] = "Download Page";
+}
+
+<h3>File List</h3>
+
+<ol class="list-group">
+    @foreach (var file in @Model)
+    {
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+                <div class="fw-bold">@file.Name</div>
+                @file.Time.ToString()
+            </div>
+
+            <div class="ms-2 me-auto">
+                @file.GetSizeString()
+            </div>
+
+            <button onclick="GenerateShortLink(@file.Id)" class="btn btn-light mx-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-link" viewBox="0 0 16 16">
+                    <path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9c-.086 0-.17.01-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1z"></path>
+                    <path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4.02 4.02 0 0 1-.82 1H12a3 3 0 1 0 0-6H9z"></path>
+                </svg>
+                <span class="visually-hidden">Link</span>
+            </button>
+
+            <a target="_blank" class="btn btn-light mx-2" asp-controller="Download" asp-action="Download" asp-route-fileId="@file.Id">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"></path>
+                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path>
+                </svg>
+                <span class="visually-hidden">Download</span>
+            </a>
+
+        </li>
+    }
+    
+</ol>
+
+<script>
+    async function GenerateShortLink(fileId) {
+        console.log(fileId);
+
+        try {
+            let response = await fetch("/GenerateShortLink?fileId=" + fileId);
+
+            if (response.ok) {
+                let link = await response.text();
+                await navigator.clipboard.writeText(link);
+                console.log('URL страницы скопирован в буфер обмена');
+            } else {
+                console.log(response);
+            }
+        } catch (err) {
+            console.error('Не удалось скопировать: ', err);
+        }
+
+        
+    }
+
+</script>
+
+

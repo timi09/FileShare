@@ -1,0 +1,20 @@
+version: '3.4'
+
+services:
+
+  sqldata:
+   environment:
+    - MSSQL_SA_PASSWORD=QwErTy12345
+    - ACCEPT_EULA=Y
+   ports:
+    - "5433:1433"
+
+  webui:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:80
+
+    ports:
+      - "5107:80"
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro

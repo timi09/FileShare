@@ -1,7 +1,17 @@
+using FileShare.Core.Services;
+using FileShare.Infrastructure.Persistence;
+using FileShare.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+var connectionString = builder.Configuration.GetConnectionString("FilesDb") ?? throw new InvalidOperationException("Connection string not found.");
+
+builder.Services.AddSingleton<IFileRepository>(new MSSQLDatabase(connectionString));
+builder.Services.AddSingleton<ILinkRepository>(new MSSQLDatabase(connectionString));
+builder.Services.AddSingleton<ILinkGenerator, FileShare.Infrastructure.LinkGenerator>();
 
 var app = builder.Build();
 
@@ -22,6 +32,8 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=File}/{action=Index}");
+    pattern: "{controller=Download}/{action=Index}");
 
 app.Run();
+
+
