@@ -1,0 +1,144 @@
+﻿@{
+    ViewData["Title"] = "Upload Page";
+}
+
+
+<div class="demo-wrapper">
+    <form id="fileForm"
+          asp-controller="Upload"
+          asp-action="Upload"
+          method="post"
+          enctype="multipart/form-data">
+
+        <input class="form-control"
+               id="fileForm_input"
+               type="file"
+               name="myfiles" multiple>
+
+        <input class="btn btn-primary my-2"
+               id="uploadForm_Submit"
+               type="submit"
+               value="Upload">
+    </form>
+
+    <ul id="files_list" class="list-group">
+    </ul>
+
+</div>
+
+<script>
+    const BYTES_IN_KB = @FileShare.Constants.FileSizeConstants.BytesInKb;
+    const BYTES_IN_MB = @FileShare.Constants.FileSizeConstants.BytesInMb;
+    const MAX_FILE_SIZE_IN_MB = @FileShare.Constants.FileValidationConstants.MaxFileSizeInMb;
+    const MAX_FILE_SIZE_IN_BYTES = @FileShare.Constants.FileValidationConstants.MaxFileSizeInBytes;
+
+    const form = document.getElementById('fileForm')
+    const fileInput = document.getElementById('fileForm_input')
+    const filesList = document.getElementById('files_list')
+
+    fileInput.addEventListener('change', fileAddHandler);
+    form.addEventListener('submit', submitHandler);
+
+    function progressHandler(event, num) {
+        var postfix = "Mb";
+        var delimeter = BYTES_IN_MB;
+        if (event.total < BYTES_IN_MB) {
+            postfix = "Kb";
+            delimeter = BYTES_IN_KB;
+        }
+
+        const loaded = (event.loaded / delimeter).toFixed(1);
+        const total = (event.total / delimeter).toFixed(1);
+        const percentLoaded = Math.round((event.loaded / event.total) * 100);
+
+        var progressBar = document.getElementById(`progressBar_${num}`);
+        progressBar.style.width = `${percentLoaded}%`;
+        progressBar["aria-valuenow"] = percentLoaded;
+        progressBar.textContent = `${loaded} ${postfix}`;
+    }
+
+    function loadHandler(event, num) {
+        var progressBar = document.getElementById(`progressBar_${num}`);
+        var totalSize = document.getElementById(`totalSize_${num}`);
+        if (event.target.status == 200) {
+            progressBar.className += " bg-success";
+            totalSize.textContent = "";
+            totalSize.className = "";
+        }
+        else {
+            progressBar.className += " bg-danger";
+            progressBar.textContent = event.target.responseText;
+            totalSize.textContent = "";
+            totalSize.className = "";
+        }
+    }
+
+    function fileAddHandler(event) {
+        filesList.innerHTML = "";
+
+        for (let i = 0; i < event.target.files.length; i++) {
+            let file = event.target.files[i];
+
+            let postfix = "Mb";
+            let delimeter = BYTES_IN_MB;
+            if (file.size < BYTES_IN_MB) {
+                postfix = "Kb";
+                delimeter = BYTES_IN_KB;
+            }
+
+            filesList.innerHTML += `<li class="list-group-item container">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col">
+                                ${file.name}
+                            </div>
+                            <div class="col align-self-center">
+                                <div class="progress">
+                                        <div id="progressBar_${i}" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                    <div id="totalSize_${i}" class="px-1"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>`;
+
+            let progressBar = document.getElementById(`progressBar_${i}`);
+
+            let totalSize = document.getElementById(`totalSize_${i}`);
+
+            let total = (file.size / delimeter).toFixed(1);
+            totalSize.textContent = `\t${total} ${postfix}`;
+
+            if (file.size > MAX_FILE_SIZE_IN_BYTES) {
+                progressBar.style.width = `${50}%`;
+                progressBar.className += " bg-danger";
+                progressBar.textContent = `Max size is ${MAX_FILE_SIZE_IN_MB} Mb`;
+            }
+            else {
+                progressBar.textContent = `0 ${postfix}`;
+            }
+        }
+    }
+
+    function submitHandler(event) {
+        event.preventDefault()
+
+        for (let i = 0; i < fileInput.files.length; i++) {
+            let file = fileInput.files[i];
+            if (file.size > MAX_FILE_SIZE_IN_BYTES)
+                continue;
+            let xhr = new XMLHttpRequest()
+            let formSent = new FormData();
+            formSent.append('file', file);
+            formSent.append('__RequestVerificationToken', "@Context.");
+            xhr.upload.addEventListener('progress', function (event) { progressHandler(event, i) }, false);
+            xhr.addEventListener('load', function (event) { loadHandler(event, i) }, false);
+            xhr.open('POST', 'upload');
+            xhr.send(formSent);
+        }
+        return false;
+    }
+</script>
+
+
+

@@ -1,0 +1,141 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@model IEnumerable<FileViewModel>
+
+@{
+    ViewData["Title"] = "My files";
+}
+
+<h3>@Localizer["MyFilesHeader"]</h3>
+
+<form asp-action="Index" method="get" class="d-flex align-content-between my-1">
+    <input type="text" name="NamePart" placeholder="@Localizer["SearchPlaceholder"]" class="d-flex me-1" value="@ViewData["NamePart"]" />
+    <button type="submit" class="btn btn-light me-4 d-flex align-items-center">
+        <svg fill="#000000" height="16px" width="16px" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 488.4 488.4" xml:space="preserve">
+            <g>
+                <g>
+                    <path d="M0,203.25c0,112.1,91.2,203.2,203.2,203.2c51.6,0,98.8-19.4,134.7-51.2l129.5,129.5c2.4,2.4,5.5,3.6,8.7,3.6    s6.3-1.2,8.7-3.6c4.8-4.8,4.8-12.5,0-17.3l-129.6-129.5c31.8-35.9,51.2-83,51.2-134.7c0-112.1-91.2-203.2-203.2-203.2    S0,91.15,0,203.25z M381.9,203.25c0,98.5-80.2,178.7-178.7,178.7s-178.7-80.2-178.7-178.7s80.2-178.7,178.7-178.7    S381.9,104.65,381.9,203.25z" />
+                </g>
+            </g>
+        </svg>
+    </button>
+
+    <select id="sortSelect" onchange="this.form.submit()" name="SortParam" class="d-flex">
+        <option value="@SortParamConstants.SizeAscending">@Localizer["SortBySizeOptionText"] 🠅</option>
+        <option value="@SortParamConstants.SizeDescending">@Localizer["SortBySizeOptionText"] 🠇</option>
+        <option value="@SortParamConstants.DateAscending">@Localizer["SortByDateOptionText"] 🠅</option>
+        <option value="@SortParamConstants.DateDescending">@Localizer["SortByDateOptionText"] 🠇</option>
+    </select>
+</form>
+
+@if (@Model.Any())
+{
+    <ol class="list-group">
+        @foreach (var file in @Model)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="ms-2 me-auto">
+                    <div class="fw-bold">@file.Name</div>
+                    @file.UploadTime
+                </div>
+
+                <div class="ms-2 me-auto">
+                    @file.Size
+                </div>
+
+                @* <div class="ms-2 me-auto">
+                    <button id="publicButton" hidden class="btn btn-light mx-2 d-flex align-items-center" asp-controller="MyFiles" asp-action="" asp-route-fileId="@file.Id">
+                        <svg fill="#000000" height="16px" width="16px" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 330 330" xml:space="preserve">
+                            <g>
+                                <path d="M15,160c8.284,0,15-6.716,15-15V85c0-30.327,24.673-55,55-55c30.327,0,55,24.673,55,55v45h-25   c-8.284,0-15,6.716-15,15v170c0,8.284,6.716,15,15,15h200c8.284,0,15-6.716,15-15V145c0-8.284-6.716-15-15-15H170V85   c0-46.869-38.131-85-85-85S0,38.131,0,85v60C0,153.284,6.716,160,15,160z" />
+                            </g>
+                        </svg>
+                        <span>Public</span>
+                    </button>
+
+                    <button id="privateButton" hidden class="btn btn-light mx-2 d-flex align-items-center" onclick="privateButtonClick(@file.Id)">
+                        <svg fill="#000000" height="16px" width="16px" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 330 330" xml:space="preserve">
+                            <g>
+                                <path d="M65,330h200c8.284,0,15-6.716,15-15V145c0-8.284-6.716-15-15-15h-15V85c0-46.869-38.131-85-85-85   S80,38.131,80,85v45H65c-8.284,0-15,6.716-15,15v170C50,323.284,56.716,330,65,330z M207.481,219.356l-42.5,42.5   c-2.929,2.929-6.768,4.394-10.606,4.394s-7.678-1.465-10.606-4.394l-21.25-21.25c-5.858-5.858-5.858-15.354,0-21.213   c5.857-5.858,15.355-5.858,21.213,0l10.644,10.643l31.894-31.893c5.857-5.858,15.355-5.858,21.213,0   C213.34,204.002,213.34,213.498,207.481,219.356z M110,85c0-30.327,24.673-55,55-55s55,24.673,55,55v45H110V85z" />
+                            </g>
+                        </svg>
+                        <span>Private</span>
+                    </button>
+                </div> *@
+
+                @using (Html.BeginForm("Delete", "MyFiles", FormMethod.Post))
+                {
+                    @Html.Hidden("fileId", @file.Id) <!-- Assuming you have an Id to pass -->
+                    @Html.AntiForgeryToken() <!-- Optional for security -->
+                    //@Html.Hidden("_method", "DELETE")
+
+                    <button type="submit" class="btn btn-light mx-2 d-flex align-items-center" onclick="return confirm('@Localizer["DeleteConfirmQuestion"] @file.Name?');">
+                        <svg fill="#000000" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="16px" height="16px" viewBox="0 0 482.428 482.429" xml:space="preserve">
+                        <g>
+                            <g>
+                                <path d="M381.163,57.799h-75.094C302.323,25.316,274.686,0,241.214,0c-33.471,0-61.104,25.315-64.85,57.799h-75.098    c-30.39,0-55.111,24.728-55.111,55.117v2.828c0,23.223,14.46,43.1,34.83,51.199v260.369c0,30.39,24.724,55.117,55.112,55.117    h210.236c30.389,0,55.111-24.729,55.111-55.117V166.944c20.369-8.1,34.83-27.977,34.83-51.199v-2.828    C436.274,82.527,411.551,57.799,381.163,57.799z M241.214,26.139c19.037,0,34.927,13.645,38.443,31.66h-76.879    C206.293,39.783,222.184,26.139,241.214,26.139z M375.305,427.312c0,15.978-13,28.979-28.973,28.979H136.096    c-15.973,0-28.973-13.002-28.973-28.979V170.861h268.182V427.312z M410.135,115.744c0,15.978-13,28.979-28.973,28.979H101.266    c-15.973,0-28.973-13.001-28.973-28.979v-2.828c0-15.978,13-28.979,28.973-28.979h279.897c15.973,0,28.973,13.001,28.973,28.979    V115.744z" />
+                                <path d="M171.144,422.863c7.218,0,13.069-5.853,13.069-13.068V262.641c0-7.216-5.852-13.07-13.069-13.07    c-7.217,0-13.069,5.854-13.069,13.07v147.154C158.074,417.012,163.926,422.863,171.144,422.863z" />
+                                <path d="M241.214,422.863c7.218,0,13.07-5.853,13.07-13.068V262.641c0-7.216-5.854-13.07-13.07-13.07    c-7.217,0-13.069,5.854-13.069,13.07v147.154C228.145,417.012,233.996,422.863,241.214,422.863z" />
+                                <path d="M311.284,422.863c7.217,0,13.068-5.853,13.068-13.068V262.641c0-7.216-5.852-13.07-13.068-13.07    c-7.219,0-13.07,5.854-13.07,13.07v147.154C298.213,417.012,304.067,422.863,311.284,422.863z" />
+                            </g>
+                        </g>
+                        </svg>
+                        <span class="visually-hidden">Delete</span>
+                    </button>
+                }
+
+                <button onclick="GenerateShortLink('@file.Id')" class="btn btn-light mx-2 d-flex align-items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-link" viewBox="0 0 16 16">
+                        <path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9c-.086 0-.17.01-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1z"></path>
+                        <path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4.02 4.02 0 0 1-.82 1H12a3 3 0 1 0 0-6H9z"></path>
+                    </svg>
+                    <span class="visually-hidden">Link</span>
+                </button>
+
+                <a target="_blank" class="btn btn-light mx-2 d-flex align-items-center" asp-controller="MyFiles" asp-action="Download" asp-route-fileId="@file.Id">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"></path>
+                        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path>
+                    </svg>
+                    <span class="visually-hidden">Download</span>
+                </a>
+
+            </li>
+        }
+    </ol>
+}
+else
+{
+    <div>
+        @Localizer["YouHasntFilesAnotation"]
+    </div>
+}
+    
+    
+
+<script>
+    document.getElementById("sortSelect").value = "@(ViewData["SortParam"] ?? @SortParamConstants.DateDescending)";
+
+    async function GenerateShortLink(fileId) {
+        console.log(fileId);
+
+        try {
+            let response = await fetch("MyFiles/GenerateShortLink?fileId=" + fileId);
+
+            if (response.ok) {
+                let link = await response.text();
+                await navigator.clipboard.writeText(link);
+                console.log('URL страницы скопирован в буфер обмена');
+            } else {
+                console.log(response);
+            }
+        } catch (err) {
+            console.error('Не удалось скопировать: ', err);
+        }
+
+        
+    }
+
+</script>
+
+
