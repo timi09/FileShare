@@ -6,14 +6,19 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using System.ComponentModel.DataAnnotations;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Text.Encodings.Web;
+using Microsoft.AspNetCore.Mvc.Localization;
+using Microsoft.Extensions.Localization;
+using FileShare.Resources.Areas.Identity.Pages.Account;
 
 namespace FileShare.Areas.Identity.Pages.Account;
 
 public class RegisterModel : PageModel
 {
     private readonly SignInManager<UserModel> _signInManager;
+    private readonly IStringLocalizer<RegisterModel> _viewLocalizer;
     private readonly UserManager<UserModel> _userManager;
     private readonly IUserStore<UserModel> _userStore;
     private readonly IUserEmailStore<UserModel> _emailStore;
@@ -21,12 +26,14 @@ public class RegisterModel : PageModel
     private readonly IEmailSender _emailSender;
 
     public RegisterModel(
+        IStringLocalizer<RegisterModel> viewLocalizer,
         UserManager<UserModel> userManager,
         IUserStore<UserModel> userStore,
         SignInManager<UserModel> signInManager,
         ILogger<RegisterModel> logger,
         IEmailSender emailSender)
     {
+        _viewLocalizer = viewLocalizer;
         _userManager = userManager;
         _userStore = userStore;
         _emailStore = GetEmailStore();
@@ -44,20 +51,21 @@ public class RegisterModel : PageModel
 
     public class InputModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessageResourceName = "EmailFieldRequired", ErrorMessageResourceType = typeof(Register))]
+        [EmailAddress(ErrorMessageResourceName = "EmailValid", ErrorMessageResourceType = typeof(Register))]
         [Display(Name = "Email")]
         public string Email { get; set; }
 
-        [Required]
-        [StringLength(100, ErrorMessage = "{0} должен быть не менее {2} и не более {1} символов.", MinimumLength = 6)]
+        [Required(ErrorMessageResourceName = "PasswordFieldRequired", ErrorMessageResourceType = typeof(Register))]
+        [StringLength(100, ErrorMessageResourceName = "PasswordLength", ErrorMessageResourceType = typeof(Register), MinimumLength = 6)]
         [DataType(DataType.Password)]
         [Display(Name = "Пароль")]
         public string Password { get; set; }
 
+        [Required(ErrorMessageResourceName = "PasswordConfirmRequired", ErrorMessageResourceType = typeof(Register))]
         [DataType(DataType.Password)]
         [Display(Name = "Подтверждение пароля")]
-        [Compare("Password", ErrorMessage = "Пароль и пароль подтверждения не совпадают.")]
+        [Compare("Password", ErrorMessageResourceName = "PasswordCompare", ErrorMessageResourceType = typeof(Register))]
         public string ConfirmPassword { get; set; }
     }
 
@@ -98,19 +106,20 @@ public class RegisterModel : PageModel
                 await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
                     $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
-                if (_userManager.Options.SignIn.RequireConfirmedAccount)
-                {
-                    return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
-                }
-                else
+                //if (_userManager.Options.SignIn.RequireConfirmedAccount)
+                //{
+                //    return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
+                //}
+                //else
                 {
                     await _signInManager.SignInAsync(user, isPersistent: false);
                     return LocalRedirect(returnUrl);
                 }
             }
+
             foreach (var error in result.Errors)
             {
-                ModelState.AddModelError(string.Empty, error.Description);
+                ModelState.AddModelError(string.Empty, GetDescription(error.Code));
             }
         }
 
@@ -142,22 +151,22 @@ public class RegisterModel : PageModel
         return (IUserEmailStore<UserModel>)_userStore;
     }
 
-    private string RusDescription(string IdentityErrorCode) 
+    private string GetDescription(string IdentityErrorCode) 
     {
         string description = "";
 
         switch (IdentityErrorCode)
         {
             case "PasswordRequiresNonAlphanumeric":
-                description = "Пароль должен содержать хотя бы один специальный символ.";
+                description = Register.PasswordRequiresNonAlphanumeric;
                 break;
 
             case "PasswordRequiresLower":
-                description = "Пароль должен содержать хотя бы одну строчную букву.";
+                description = Register.PasswordRequiresLower;
                 break;
 
             case "PasswordRequiresUpper":
-                description = "Пароль должен содержать хотя бы одну заглавную букву.";
+                description = Register.PasswordRequiresUpper;
                 break;
 
             default:

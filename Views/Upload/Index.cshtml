@@ -1,4 +1,6 @@
-﻿@{
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@{
     ViewData["Title"] = "Upload Page";
 }
 
@@ -10,7 +12,7 @@
           method="post"
           enctype="multipart/form-data">
 
-        <input class="form-control"
+        <input class="form-control form-control-lg"
                id="fileForm_input"
                type="file"
                name="myfiles" multiple>
@@ -18,7 +20,7 @@
         <input class="btn btn-primary my-2"
                id="uploadForm_Submit"
                type="submit"
-               value="Upload">
+               value="@Localizer["UploadButtonText"]">
     </form>
 
     <ul id="files_list" class="list-group">
@@ -112,7 +114,7 @@
             if (file.size > MAX_FILE_SIZE_IN_BYTES) {
                 progressBar.style.width = `${50}%`;
                 progressBar.className += " bg-danger";
-                progressBar.textContent = `Max size is ${MAX_FILE_SIZE_IN_MB} Mb`;
+                progressBar.textContent = `@Localizer["MaxSizeText"] ${MAX_FILE_SIZE_IN_MB} Mb`;
             }
             else {
                 progressBar.textContent = `0 ${postfix}`;

@@ -1,4 +1,5 @@
 ﻿using FileShare.Models;
+using FileShare.Resources.Areas.Identity.Pages.Account;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -30,12 +31,14 @@ public class LoginModel : PageModel
 
     public class InputModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessageResourceName = "EmailFieldRequired", ErrorMessageResourceType = typeof(Register))]
+        [EmailAddress(ErrorMessageResourceName = "EmailValid", ErrorMessageResourceType = typeof(Register))]
+        [Display(Name = "Email")]
         public string Email { get; set; }
 
-        [Required]
+        [Required(ErrorMessageResourceName = "PasswordFieldRequired", ErrorMessageResourceType = typeof(Register))]
         [DataType(DataType.Password)]
+        [Display(Name = "Пароль")]
         public string Password { get; set; }
 
         [Display(Name = "Remember me?")]
