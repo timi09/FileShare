@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace FileShare.Controllers
 {
@@ -204,14 +203,11 @@ namespace FileShare.Controllers
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
-
-                //return Ok();
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
                 _logger.LogError(ex, ex.Message);
-                //return Problem();
             }
             return RedirectToAction(nameof(Index));
         }

@@ -69,17 +69,16 @@ public class Program
         services.AddDefaultIdentity<UserModel>(options => options.SignIn.RequireConfirmedAccount = true)
             .AddEntityFrameworkStores<ApplicationDbContext>();
 
-        services.AddControllersWithViews();
-
         services.AddScoped<ILinkGenerateService, RandomLinkGenerateService>();
         services.AddScoped<IFileStorageService, FileStorageService>();
         
         services.Configure<FileStorageSettings>(configuration.GetSection("FileStorageSettings"));
 
         services.AddLocalization(options => options.ResourcesPath = "Resources");
+        
         services.AddControllersWithViews()
             .AddDataAnnotationsLocalization()
-        .AddViewLocalization();
+            .AddViewLocalization();
 
         services.Configure<RequestLocalizationOptions>(options =>
         {
