@@ -20,6 +20,7 @@
     },
     "IIS Express": {
       "commandName": "IISExpress",
+      "commandLineArgs": "-k 0123456789abcdef",
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

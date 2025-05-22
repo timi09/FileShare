@@ -18,7 +18,16 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        var secretKey = "0123456789abcdef";
+        if (args.Length != 2)
+            throw new Exception("Enter secretKey after argument -k");
+
+        if (args[0] != "-k")
+            throw new Exception("Enter secretKey after argument -k");
+
+        if (args[1].Length < 16)
+            throw new Exception("SecretKey must contain more than 16 digits");
+
+        var secretKey = args[1].Substring(0, 16);
 
         var builder = WebApplication.CreateBuilder(args);
 
