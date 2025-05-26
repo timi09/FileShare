@@ -4,7 +4,6 @@
     ViewData["Title"] = "Upload Page";
 }
 
-
 <div class="demo-wrapper">
     <form id="fileForm"
           asp-controller="Upload"
@@ -12,21 +11,53 @@
           method="post"
           enctype="multipart/form-data">
 
-        <input class="form-control form-control-lg"
-               id="fileForm_input"
-               type="file"
-               name="myfiles" multiple>
+        <!-- Новый drag and drop элемент -->
+        <div id="dropZone" class="drop-zone mb-3">
+            <div class="text-center">
+                <i class="bi bi-cloud-arrow-up fs-1 text-primary"></i>
+                <h5>@Localizer["DragAndDropText"]</h5>
+                <p class="text-muted">@Localizer["OrText"]</p>
+                <button type="button" class="btn btn-primary" id="browseBtn">@Localizer["BrowseFilesText"]</button>
+                <input class="form-control form-control-lg d-none"
+                       id="fileForm_input"
+                       type="file"
+                       name="myfiles" multiple>
+            </div>
+        </div>
 
         <input class="btn btn-primary my-2"
                id="uploadForm_Submit"
                type="submit"
                value="@Localizer["UploadButtonText"]">
+
+        <ul id="files_list" class="list-group mt-3">
+        </ul>
     </form>
-
-    <ul id="files_list" class="list-group">
-    </ul>
-
 </div>
+
+<style>
+    .drop-zone {
+        border: 2px dashed #0d6efd;
+        border-radius: 5px;
+        padding: 30px;
+        text-align: center;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+    .drop-zone:hover {
+        background-color: #f8f9fa;
+    }
+
+    .drop-zone.drag-over {
+        background-color: #e7f1ff;
+        border-color: #0b5ed7;
+    }
+
+    .file-item-progress {
+        margin-top: 5px;
+    }
+</style>
 
 <script>
     const BYTES_IN_KB = @FileShare.Constants.FileSizeConstants.BytesInKb;
@@ -34,113 +65,147 @@
     const MAX_FILE_SIZE_IN_MB = @FileShare.Constants.FileValidationConstants.MaxFileSizeInMb;
     const MAX_FILE_SIZE_IN_BYTES = @FileShare.Constants.FileValidationConstants.MaxFileSizeInBytes;
 
-    const form = document.getElementById('fileForm')
-    const fileInput = document.getElementById('fileForm_input')
-    const filesList = document.getElementById('files_list')
+    const form = document.getElementById('fileForm');
+    const fileInput = document.getElementById('fileForm_input');
+    const filesList = document.getElementById('files_list');
+    const dropZone = document.getElementById('dropZone');
+    const browseBtn = document.getElementById('browseBtn');
 
-    fileInput.addEventListener('change', fileAddHandler);
-    form.addEventListener('submit', submitHandler);
+    let files = [];
+
+    // Инициализация событий
+    function initEvents() {
+        // Drag and drop события
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        dropZone.addEventListener('drop', handleDrop, false);
+        browseBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+        form.addEventListener('submit', submitHandler);
+    }
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    function highlight() {
+        dropZone.classList.add('drag-over');
+    }
+
+    function unhighlight() {
+        dropZone.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        files = dt.files;
+        fileInput.files = files; // Устанавливаем файлы в input
+        updateFileList();
+    }
+
+    function handleFileSelect(e) {
+        files = e.target.files;
+        updateFileList();
+    }
+
+    function updateFileList() {
+        filesList.innerHTML = "";
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const postfix = file.size < BYTES_IN_MB ? "Kb" : "Mb";
+            const delimeter = file.size < BYTES_IN_MB ? BYTES_IN_KB : BYTES_IN_MB;
+            const total = (file.size / delimeter).toFixed(1);
+
+            filesList.innerHTML += `
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="file-item-name">${file.name}</div>
+                        <div class="file-item-size">${total} ${postfix}</div>
+                    </div>
+                    <div class="file-item-progress">
+                        <div class="progress">
+                            <div id="progressBar_${i}" class="progress-bar" role="progressbar" style="width: 0%;"
+                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div id="totalSize_${i}" class="text-end small text-muted"></div>
+                    </div>
+                    ${file.size > MAX_FILE_SIZE_IN_BYTES ?
+                      `<div class="text-danger small mt-1">@Localizer["MaxSizeText"] ${MAX_FILE_SIZE_IN_MB} Mb</div>` : ''}
+                </li>`;
+
+            if (file.size > MAX_FILE_SIZE_IN_BYTES) {
+                const progressBar = document.getElementById(`progressBar_${i}`);
+                progressBar.style.width = `100%`;
+                progressBar.classList.add("bg-danger");
+                progressBar.textContent = `@Localizer["MaxSizeText"] ${MAX_FILE_SIZE_IN_MB} Mb`;
+            }
+        }
+    }
 
     function progressHandler(event, num) {
-        var postfix = "Mb";
-        var delimeter = BYTES_IN_MB;
-        if (event.total < BYTES_IN_MB) {
-            postfix = "Kb";
-            delimeter = BYTES_IN_KB;
-        }
-
+        const postfix = event.total < BYTES_IN_MB ? "Kb" : "Mb";
+        const delimeter = event.total < BYTES_IN_MB ? BYTES_IN_KB : BYTES_IN_MB;
         const loaded = (event.loaded / delimeter).toFixed(1);
         const total = (event.total / delimeter).toFixed(1);
         const percentLoaded = Math.round((event.loaded / event.total) * 100);
 
-        var progressBar = document.getElementById(`progressBar_${num}`);
+        const progressBar = document.getElementById(`progressBar_${num}`);
         progressBar.style.width = `${percentLoaded}%`;
-        progressBar["aria-valuenow"] = percentLoaded;
+        progressBar.setAttribute("aria-valuenow", percentLoaded);
         progressBar.textContent = `${loaded} ${postfix}`;
+
+        const totalSize = document.getElementById(`totalSize_${num}`);
+        totalSize.textContent = `${loaded} / ${total} ${postfix}`;
     }
 
     function loadHandler(event, num) {
-        var progressBar = document.getElementById(`progressBar_${num}`);
-        var totalSize = document.getElementById(`totalSize_${num}`);
+        const progressBar = document.getElementById(`progressBar_${num}`);
+        const totalSize = document.getElementById(`totalSize_${num}`);
+
         if (event.target.status == 200) {
-            progressBar.className += " bg-success";
+            progressBar.classList.add("bg-success");
             totalSize.textContent = "";
-            totalSize.className = "";
-        }
-        else {
-            progressBar.className += " bg-danger";
-            progressBar.textContent = event.target.responseText;
+        } else {
+            progressBar.classList.add("bg-danger");
+            progressBar.textContent = event.target.responseText || "Upload failed";
             totalSize.textContent = "";
-            totalSize.className = "";
-        }
-    }
-
-    function fileAddHandler(event) {
-        filesList.innerHTML = "";
-
-        for (let i = 0; i < event.target.files.length; i++) {
-            let file = event.target.files[i];
-
-            let postfix = "Mb";
-            let delimeter = BYTES_IN_MB;
-            if (file.size < BYTES_IN_MB) {
-                postfix = "Kb";
-                delimeter = BYTES_IN_KB;
-            }
-
-            filesList.innerHTML += `<li class="list-group-item container">
-                    <div class="container">
-                        <div class="row">
-                            <div class="col">
-                                ${file.name}
-                            </div>
-                            <div class="col align-self-center">
-                                <div class="progress">
-                                        <div id="progressBar_${i}" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                                    <div id="totalSize_${i}" class="px-1"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </li>`;
-
-            let progressBar = document.getElementById(`progressBar_${i}`);
-
-            let totalSize = document.getElementById(`totalSize_${i}`);
-
-            let total = (file.size / delimeter).toFixed(1);
-            totalSize.textContent = `\t${total} ${postfix}`;
-
-            if (file.size > MAX_FILE_SIZE_IN_BYTES) {
-                progressBar.style.width = `${50}%`;
-                progressBar.className += " bg-danger";
-                progressBar.textContent = `@Localizer["MaxSizeText"] ${MAX_FILE_SIZE_IN_MB} Mb`;
-            }
-            else {
-                progressBar.textContent = `0 ${postfix}`;
-            }
         }
     }
 
     function submitHandler(event) {
-        event.preventDefault()
+        event.preventDefault();
 
-        for (let i = 0; i < fileInput.files.length; i++) {
-            let file = fileInput.files[i];
-            if (file.size > MAX_FILE_SIZE_IN_BYTES)
-                continue;
-            let xhr = new XMLHttpRequest()
-            let formSent = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (file.size > MAX_FILE_SIZE_IN_BYTES) continue;
+
+            const xhr = new XMLHttpRequest();
+            const formSent = new FormData();
             formSent.append('file', file);
-            formSent.append('__RequestVerificationToken', "@Context.");
-            xhr.upload.addEventListener('progress', function (event) { progressHandler(event, i) }, false);
-            xhr.addEventListener('load', function (event) { loadHandler(event, i) }, false);
+            formSent.append('__RequestVerificationToken', "@Context..."); // Замените на актуальный токен
+
+            xhr.upload.addEventListener('progress', (e) => progressHandler(e, i));
+            xhr.addEventListener('load', (e) => loadHandler(e, i));
             xhr.open('POST', 'upload');
             xhr.send(formSent);
         }
-        return false;
     }
+
+    // Инициализация при загрузке страницы
+    document.addEventListener('DOMContentLoaded', initEvents);
 </script>
 
-
-
+<!-- Подключение Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
