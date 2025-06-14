@@ -1,4 +1,3 @@
-using FileShare.Models;
 using FileShare.ViewModels;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;

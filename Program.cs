@@ -19,7 +19,16 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        var secretKey = "0123456789abcdef";
+        if (args.Length != 2)
+            throw new Exception("Enter secretKey after argument -k");
+
+        if (args[0] != "-k")
+            throw new Exception("Enter secretKey after argument -k");
+
+        if (args[1].Length < 16)
+            throw new Exception("SecretKey must contain more than 16 digits");
+
+        var secretKey = args[1].Substring(0, 16);
 
         var builder = WebApplication.CreateBuilder(args);
 
@@ -89,17 +98,16 @@ public class Program
         services.AddDefaultIdentity<UserModel>(options => options.SignIn.RequireConfirmedAccount = true)
             .AddEntityFrameworkStores<ApplicationDbContext>();
 
-        services.AddControllersWithViews();
-
         services.AddScoped<ILinkGenerateService, RandomLinkGenerateService>();
         services.AddScoped<IFileStorageService, FileStorageService>();
         
         services.Configure<FileStorageSettings>(configuration.GetSection("FileStorageSettings"));
 
         services.AddLocalization(options => options.ResourcesPath = "Resources");
+        
         services.AddControllersWithViews()
             .AddDataAnnotationsLocalization()
-        .AddViewLocalization();
+            .AddViewLocalization();
 
         services.Configure<RequestLocalizationOptions>(options =>
         {

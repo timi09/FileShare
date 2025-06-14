@@ -1,8 +1,6 @@
 ﻿using FileShare.Interfaces;
 using FileShare.Settings;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Options;
-using System.IO;
 using System.Security.Cryptography;
 
 namespace FileShare.Services;
@@ -22,11 +20,6 @@ public class FileStorageService : IFileStorageService
     {
         var filePath = Path.Combine(_fileStorageSettings.Path, fileId);
 
-        //using (var fileStream = new FileStream(filePath, FileMode.Create))
-        //{
-        //    await file.CopyToAsync(fileStream);
-        //}
-
         using (var aes = Aes.Create())
         using (var fileStream = new FileStream(filePath, FileMode.Create))
         {
@@ -43,8 +36,7 @@ public class FileStorageService : IFileStorageService
     public async Task<byte[]> ReadFileAsBytesAsync(string fileId)
     {
         var filePath = Path.Combine(_fileStorageSettings.Path, fileId);
-        //return File.ReadAllBytesAsync(filePath);
-
+        
         using (Aes aes = Aes.Create())
         using (var fileStream = new FileStream(filePath, FileMode.Open))
         {

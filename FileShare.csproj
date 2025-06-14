@@ -21,4 +21,15 @@
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
     </ItemGroup>
 
+	<ItemGroup>
+	  <EmbeddedResource Update="Resources\Areas\Identity\Pages\Account\Register.en.resx">
+	    <Generator>PublicResXFileCodeGenerator</Generator>
+	    <CustomToolNamespace>FileShare.Resources.Areas.Identity.Pages.Account</CustomToolNamespace>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Areas\Identity\Pages\Account\Register.ru.resx">
+	    <Generator>PublicResXFileCodeGenerator</Generator>
+	    <CustomToolNamespace>FileShare.Resources.Areas.Identity.Pages.Account</CustomToolNamespace>
+	  </EmbeddedResource>
+	</ItemGroup>
+
 </Project>
