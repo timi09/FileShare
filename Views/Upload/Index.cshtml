@@ -141,8 +141,7 @@
                         </div>
                         <div id="totalSize_${i}" class="text-end small text-muted"></div>
                     </div>
-                    ${file.size > MAX_FILE_SIZE_IN_BYTES ?
-                      `<div class="text-danger small mt-1">@Localizer["MaxSizeText"] ${MAX_FILE_SIZE_IN_MB} Mb</div>` : ''}
+                   
                 </li>`;
 
             if (file.size > MAX_FILE_SIZE_IN_BYTES) {
