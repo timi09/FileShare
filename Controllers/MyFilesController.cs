@@ -1,4 +1,5 @@
-﻿using FileShare.Constants;
+﻿using System.Text.RegularExpressions;
+using FileShare.Constants;
 using FileShare.Data;
 using FileShare.Helpers;
 using FileShare.Interfaces;
@@ -73,7 +74,7 @@ namespace FileShare.Controllers
                 {
                     Id = file.Id,
                     Name = file.Name,
-                    UploadTime = file.UploadTime.ToString(DateTimeFormatConstants.DefaultDatetimeFormat),
+                    UploadTime = file.UploadTime.ToLocalTime().ToString(DateTimeFormatConstants.DefaultDatetimeFormat),
                     Size = FileSizeHelper.GetFileSizeString(file.SizeInBytes)
                 });
 
@@ -111,7 +112,7 @@ namespace FileShare.Controllers
 
         [HttpGet]
         [Route("MyFiles/GenerateShortLink")]
-        public async Task<IActionResult> GenerateShortLink(string fileId)
+        public async Task<IActionResult> GenerateShortLink(string fileId, int? maxDownloads, bool unlimited)
         {
             var userModel = await _userManager.GetUserAsync(User);
             var file = await _context.Files.FirstOrDefaultAsync(file => file.Id == fileId && file.UserId == userModel.Id);
@@ -140,9 +141,13 @@ namespace FileShare.Controllers
 
                 await transaction.CommitAsync();
 
-                string domainName = Request.Host.ToString();
-
-                return Ok($"https://{domainName}/dwnld/{newLink.Id}");
+                return Ok(new
+                {
+                    ShortUrl = $"https://{Request.Host}/{newLink.Id}",
+                    Max = newLink.MaxDownloadCount,
+                    Current = newLink.CurrentDownloadCount,
+                    Unlimited = newLink.Unlimited
+                });
             }
             catch (Exception ex)
             {
@@ -153,9 +158,12 @@ namespace FileShare.Controllers
         }
 
         [HttpGet]
-        [Route("dwnld/{linkId}")]
         public async Task<IActionResult> DownloadByShortLink(string linkId)
         {
+            // Защита от конфликтов с обычными маршрутами (MyFiles, Account и т.п.)
+            if (!Regex.IsMatch(linkId, "^[a-zA-Z0-9]{5,5}$"))
+                return NotFound();
+
             var link = await _context.Links.Include(link => link.File).FirstOrDefaultAsync(link => link.Id == linkId);
 
             if (link == null)
@@ -166,7 +174,7 @@ namespace FileShare.Controllers
             {
                 link.CurrentDownloadCount++;
 
-                if(link.CurrentDownloadCount >= link.MaxDownloadCount)
+                if(!link.Unlimited && link.CurrentDownloadCount >= link.MaxDownloadCount)
                     _context.Links.Remove(link);
 
                 await _context.SaveChangesAsync();
@@ -215,5 +223,69 @@ namespace FileShare.Controllers
             }
             return RedirectToAction(nameof(Index));
         }
+
+        [HttpGet]
+        [Route("MyFiles/GetShortLink")]
+        public async Task<IActionResult> GetShortLinkInfo(string fileId)
+        {
+            var userModel = await _userManager.GetUserAsync(User);
+            var file = await _context.Files.FirstOrDefaultAsync(f => f.Id == fileId && f.UserId == userModel.Id);
+
+            if (file == null)
+                return NotFound("File not found");
+
+            var link = await _context.Links.FirstOrDefaultAsync(l => l.FileId == fileId);
+
+            if (link == null)
+                return NotFound(null); // нет ссылки
+
+            return Ok(new
+            {
+                ShortUrl = $"https://{Request.Host}/{link.Id}",
+                Current = link.CurrentDownloadCount,
+                Max = link.MaxDownloadCount,
+                Unlimited = link.Unlimited
+            });
+        }
+
+        [HttpPost]
+        [Route("MyFiles/UpdateShortLink")]
+        public async Task<IActionResult> UpdateShortLink(string fileId, int? maxDownloads, bool unlimited)
+        {
+            var userModel = await _userManager.GetUserAsync(User);
+            var file = await _context.Files.FirstOrDefaultAsync(f => f.Id == fileId && f.UserId == userModel.Id);
+
+            if (file == null)
+                return NotFound("File not found");
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var oldLink = await _context.Links.FirstOrDefaultAsync(l => l.FileId == fileId);
+
+                oldLink.MaxDownloadCount = maxDownloads ?? 1;
+                oldLink.Unlimited = unlimited;
+
+                _context.Links.Update(oldLink);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new
+                {
+                    ShortUrl = $"https://{Request.Host}/{oldLink.Id}",
+                    Max = oldLink.MaxDownloadCount,
+                    Current = oldLink.CurrentDownloadCount,
+                    Unlimited = oldLink.Unlimited
+                });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, ex.Message);
+                return Problem();
+            }
+        }
+
+
     }
 }

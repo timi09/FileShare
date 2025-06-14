@@ -34,7 +34,7 @@ namespace FileShare.Controllers
         }
 
         [HttpPost]
-        [Route("/Upload")]
+        [Route("Upload")]
         public async Task<IActionResult> Upload(IFormFile file)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();

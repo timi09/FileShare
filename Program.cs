@@ -4,6 +4,7 @@ using FileShare.Models;
 using FileShare.Providers;
 using FileShare.Services;
 using FileShare.Settings;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,18 @@ public class Program
         var secretKey = "0123456789abcdef";
 
         var builder = WebApplication.CreateBuilder(args);
+
+        builder.Services.Configure<FormOptions>(options =>
+        {
+            options.MultipartBodyLengthLimit = 50L * 1024 * 1024 * 1024; // 50 GB
+        });
+
+        builder.WebHost.ConfigureKestrel(serverOptions =>
+        {
+            serverOptions.ListenAnyIP(7000);
+
+            serverOptions.Limits.MaxRequestBodySize = 50L * 1024 * 1024 * 1024; // 50 ца
+        });
 
         builder.Services.AddSingleton<ISecretKeyProvider>(new SecretKeyProvider(Encoding.ASCII.GetBytes(secretKey)));
 
@@ -41,16 +54,23 @@ public class Program
         }
 
         app.UseRequestLocalization();
-        app.UseHttpsRedirection();
         app.UseStaticFiles();
 
         app.UseRouting();
 
         app.UseAuthorization();
 
+        app.MapControllers();
+
         app.MapControllerRoute(
             name: "default",
             pattern: "{controller=Home}/{action=Index}/{id?}");
+
+        app.MapControllerRoute(
+            name: "shortlink",
+            pattern: "{linkId}",
+            defaults: new { controller = "MyFiles", action = "DownloadByShortLink" });
+
         app.MapRazorPages();
 
         app.Run();

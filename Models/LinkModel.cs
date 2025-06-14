@@ -7,4 +7,5 @@ public class LinkModel
     public FileModel File { get; set; }
     public int CurrentDownloadCount { get; set; }
     public int MaxDownloadCount { get; set; } = 1;
+    public bool Unlimited { get; set; }
 }
