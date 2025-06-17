@@ -142,7 +142,7 @@ namespace FileShare.Controllers
 
                 return Ok(new
                 {
-                    ShortUrl = $"https://{Request.Host}/{newLink.Id}",
+                    ShortUrl = $"{Request.Host}/{newLink.Id}",
                     Max = newLink.MaxDownloadCount,
                     Current = newLink.CurrentDownloadCount,
                     Unlimited = newLink.Unlimited
@@ -237,7 +237,7 @@ namespace FileShare.Controllers
 
             return Ok(new
             {
-                ShortUrl = $"https://{Request.Host}/{link.Id}",
+                ShortUrl = $"{Request.Host}/{link.Id}",
                 Current = link.CurrentDownloadCount,
                 Max = link.MaxDownloadCount,
                 Unlimited = link.Unlimited
@@ -268,7 +268,7 @@ namespace FileShare.Controllers
 
                 return Ok(new
                 {
-                    ShortUrl = $"https://{Request.Host}/{oldLink.Id}",
+                    ShortUrl = $"{Request.Host}/{oldLink.Id}",
                     Max = oldLink.MaxDownloadCount,
                     Current = oldLink.CurrentDownloadCount,
                     Unlimited = oldLink.Unlimited

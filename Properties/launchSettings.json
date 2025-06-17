@@ -1,12 +1,13 @@
 {
   "profiles": {
     "http": {
-        "commandName": "Project",
-        "environmentVariables": {
-            "ASPNETCORE_ENVIRONMENT": "Development"
-        },
-        "dotnetRunMessages": true,
-        "applicationUrl": "http://localhost:7000"
+      "commandName": "Project",
+      "commandLineArgs": "-k 0123456789abcdef",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:7000"
     },
     "https": {
       "commandName": "Project",
