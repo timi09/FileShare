@@ -136,16 +136,23 @@ else
                 <label for="maxDownloadsInput" class="form-label">Максимум скачиваний</label>
                 <div class="d-flex align-items-center">
                     <input type="number" id="maxDownloadsInput" class="form-control me-2" min="1" value="1">
-                    <div class="form-check form-switch align-self-center">
+                    <div class="form-check form-switch align-self-center me-2">
                         <input class="form-check-input" type="checkbox" id="unlimitedSwitch" onchange="toggleUnlimited()">
                         <label class="form-check-label" for="unlimitedSwitch">∞</label>
                     </div>
+                    <button class="btn btn-outline-primary" onclick="updateLink()">Обновить</button>
                 </div>
                 <span id="currentDownloads" class="me-2 text-muted small"></span>
             </div>
-            <div class="d-flex gap-2 mt-3">
-                <button class="btn btn-outline-primary" onclick="updateLink()">Обновить</button>
-                <button class="btn btn-secondary" onclick="confirmRegenerateLink()">Создать новую ссылку</button>
+            <div class="d-flex align-items-center gap-2 mt-3">
+                <div class="flex-grow-1">
+                    <label for="linkLengthRange" class="form-label mb-1">Длина ссылки: <span id="linkLengthLabel">20</span></label>
+                    <input type="range" class="form-range" min="10" max="30" id="linkLengthRange" value="20"
+                           oninput="document.getElementById('linkLengthLabel').innerText = this.value">
+                </div>
+                <button class="btn btn-secondary flex-shrink-0" style="white-space: nowrap;" onclick="confirmRegenerateLink()">
+                    Создать новую ссылку
+                </button>
             </div>
         </div>
     </div>
@@ -178,7 +185,8 @@ else
         }
 
         function generateLink() {
-            fetch(`/MyFiles/GenerateShortLink?fileId=${currentFileId}`)
+            const length = document.getElementById('linkLengthRange').value;
+            fetch(`/MyFiles/GenerateShortLink?fileId=${currentFileId}&length=${length}`)
                 .then(r => r.ok ? r.json() : null)
                 .then(data => fillShortLinkModal(data));
         }
@@ -206,6 +214,14 @@ else
             document.getElementById('maxDownloadsInput').value = data.max;
             document.getElementById('unlimitedSwitch').checked = data.unlimited;
             document.getElementById('currentDownloads').textContent = `Скачано: ${data.current}`;
+            
+            // Установка значения длины ссылки
+            const actualLength = data.shortUrl?.length || 20;
+            const linkLengthSlider = document.getElementById('linkLengthRange');
+            const label = document.getElementById('linkLengthLabel');
+            linkLengthSlider.value = actualLength;
+            label.textContent = actualLength;
+
             toggleUnlimited();
             shortLinkModal.show();
         }

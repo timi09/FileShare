@@ -26,7 +26,7 @@ public static class FileValidator
     private static void ValidateFileExtension(IFormFile file)
     {
         var extension = Path.GetExtension(file.FileName);
-        if (!FileValidationConstants.AllowedExtensions.Contains(extension.ToLower()))
+        if (FileValidationConstants.NotAllowedExtensions.Contains(extension.ToLower()))
             throw new ValidationException($"File extension \"{extension}\" is not allowed.");
     }
 

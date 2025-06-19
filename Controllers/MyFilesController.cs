@@ -111,7 +111,7 @@ namespace FileShare.Controllers
 
         [HttpGet]
         [Route("MyFiles/GenerateShortLink")]
-        public async Task<IActionResult> GenerateShortLink(string fileId, int? maxDownloads, bool unlimited)
+        public async Task<IActionResult> GenerateShortLink(string fileId, int length, int? maxDownloads, bool unlimited)
         {
             var userModel = await _userManager.GetUserAsync(User);
             var file = await _context.Files.FirstOrDefaultAsync(file => file.Id == fileId && file.UserId == userModel.Id);
@@ -127,10 +127,12 @@ namespace FileShare.Controllers
                 if (oldLink != null)
                     _context.Links.Remove(oldLink);
 
+                var linkIdLength = length - (Request.Host.Value.Length + 1);
+
                 LinkModel newLink = null;
                 do
                 {
-                    newLink = _linkGenerateService.GenerateLink(file);
+                    newLink = _linkGenerateService.GenerateLink(file, linkIdLength);
                 }
                 while (await _context.Links.AnyAsync(link => link.Id == newLink.Id));
 
@@ -160,7 +162,7 @@ namespace FileShare.Controllers
         public async Task<IActionResult> DownloadByShortLink(string linkId)
         {
             // Защита от конфликтов с обычными маршрутами (MyFiles, Account и т.п.)
-            if (!Regex.IsMatch(linkId, "^[a-zA-Z0-9]{5,5}$"))
+            if (!Regex.IsMatch(linkId, "^[a-zA-Z0-9]{3,23}$"))
                 return NotFound();
 
             var link = await _context.Links.Include(link => link.File).FirstOrDefaultAsync(link => link.Id == linkId);

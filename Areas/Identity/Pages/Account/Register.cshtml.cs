@@ -113,7 +113,7 @@ public class RegisterModel : PageModel
                 //else
                 {
                     await _signInManager.SignInAsync(user, isPersistent: false);
-                    return LocalRedirect(returnUrl);
+                    return LocalRedirect("/MyFiles");
                 }
             }
 
